@@ -2,13 +2,19 @@
   "template": "strategy-rpg",
   "slug": "hex-crusade",
   "title": "Hex Crusade",
-  "currentVersion": 1,
+  "currentVersion": 2,
   "versions": [
     {
       "version": 1,
       "date": "2026-02-11",
       "issue": null,
       "description": "Initial release"
+    },
+    {
+      "version": 2,
+      "date": "2026-02-11",
+      "issue": null,
+      "description": "Published v2"
     }
   ]
 }
