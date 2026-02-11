@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "forkarcade": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "/home/dadmor/code/fork-arcade/forkarcade-platform/mcp/src/index.js"
+      ],
+      "env": {}
+    }
+  }
+}
