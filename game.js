@@ -447,7 +447,27 @@ function drawGrid() {
       let isTarget = false
       if (targets.find(h => h.col === c && h.row === r)) isTarget = true
 
-      drawHex(x, y, HEX_SIZE - 1, t.color, '#333')
+      // Draw terrain — sprite with hex fallback
+      var terrainSprite = typeof getSprite === 'function' && getSprite('terrain', cell.terrain)
+      if (terrainSprite) {
+        // Clip to hex shape, then draw sprite
+        ctx.save()
+        ctx.beginPath()
+        for (let i = 0; i < 6; i++) {
+          const angle = Math.PI / 180 * (60 * i - 30)
+          const hx = x + (HEX_SIZE - 1) * Math.cos(angle)
+          const hy = y + (HEX_SIZE - 1) * Math.sin(angle)
+          if (i === 0) ctx.moveTo(hx, hy); else ctx.lineTo(hx, hy)
+        }
+        ctx.closePath()
+        ctx.clip()
+        drawSprite(ctx, terrainSprite, x - HEX_SIZE, y - HEX_SIZE, HEX_SIZE * 2)
+        ctx.restore()
+        // Draw hex border
+        drawHex(x, y, HEX_SIZE - 1, null, '#333')
+      } else {
+        drawHex(x, y, HEX_SIZE - 1, t.color, '#333')
+      }
 
       if (highlight) drawHex(x, y, HEX_SIZE - 2, 'rgba(100,200,255,0.3)', '#4cf')
       if (isTarget) drawHex(x, y, HEX_SIZE - 2, 'rgba(255,80,80,0.3)', '#f44')
