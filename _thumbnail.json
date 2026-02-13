@@ -1,0 +1,295 @@
+{
+  "path": "/home/dadmor/code/fork-arcade/games/hex-crusade",
+  "w": 480,
+  "h": 270,
+  "layers": [
+    {
+      "res": [
+        120,
+        68
+      ],
+      "aa": "lanczos",
+      "ops": [
+        {
+          "fill": "#1a1a2e"
+        },
+        {
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 120,
+            "h": 14,
+            "color": "#0d0d1a"
+          }
+        },
+        {
+          "rect": {
+            "x": 0,
+            "y": 60,
+            "w": 120,
+            "h": 8,
+            "color": "#0d0d1a"
+          }
+        }
+      ]
+    },
+    {
+      "res": [
+        480,
+        270
+      ],
+      "aa": "nearest",
+      "ops": [
+        {
+          "hex_grid": {
+            "cols": 10,
+            "rows": 7,
+            "hex_size": 24,
+            "x": -20,
+            "y": 30,
+            "terrain": [
+              [
+                "plains",
+                "plains",
+                "forest",
+                "plains",
+                "plains",
+                "mountain",
+                "plains",
+                "plains",
+                "castle",
+                "castle"
+              ],
+              [
+                "plains",
+                "forest",
+                "plains",
+                "plains",
+                "plains",
+                "plains",
+                "forest",
+                "plains",
+                "plains",
+                "plains"
+              ],
+              [
+                "plains",
+                "plains",
+                "plains",
+                "water",
+                "plains",
+                "plains",
+                "plains",
+                "plains",
+                "castle",
+                "plains"
+              ],
+              [
+                "forest",
+                "plains",
+                "plains",
+                "water",
+                "plains",
+                "plains",
+                "forest",
+                "plains",
+                "plains",
+                "plains"
+              ],
+              [
+                "plains",
+                "plains",
+                "forest",
+                "plains",
+                "plains",
+                "plains",
+                "plains",
+                "plains",
+                "plains",
+                "plains"
+              ],
+              [
+                "plains",
+                "forest",
+                "plains",
+                "plains",
+                "mountain",
+                "plains",
+                "plains",
+                "plains",
+                "forest",
+                "plains"
+              ],
+              [
+                "plains",
+                "plains",
+                "plains",
+                "forest",
+                "plains",
+                "plains",
+                "plains",
+                "plains",
+                "plains",
+                "plains"
+              ]
+            ],
+            "colors": {
+              "plains": "#5a8c3c",
+              "forest": "#2d5a1e",
+              "mountain": "#7a7a7a",
+              "water": "#2a6a9a",
+              "castle": "#8a6a3a"
+            },
+            "outline": "#1a1a2e",
+            "outline_width": 2
+          }
+        }
+      ]
+    },
+    {
+      "res": [
+        480,
+        270
+      ],
+      "aa": "nearest",
+      "ops": [
+        {
+          "circle": {
+            "cx": 100,
+            "cy": 115,
+            "r": 16,
+            "outline": "#4488ff",
+            "width": 3
+          }
+        },
+        {
+          "sprite": {
+            "category": "units",
+            "name": "warrior",
+            "x": 88,
+            "y": 103,
+            "scale": 3
+          }
+        },
+        {
+          "circle": {
+            "cx": 60,
+            "cy": 185,
+            "r": 16,
+            "outline": "#4488ff",
+            "width": 3
+          }
+        },
+        {
+          "sprite": {
+            "category": "units",
+            "name": "archer",
+            "x": 48,
+            "y": 173,
+            "scale": 3
+          }
+        },
+        {
+          "circle": {
+            "cx": 140,
+            "cy": 155,
+            "r": 16,
+            "outline": "#4488ff",
+            "width": 3
+          }
+        },
+        {
+          "sprite": {
+            "category": "units",
+            "name": "mage",
+            "x": 128,
+            "y": 143,
+            "scale": 3
+          }
+        },
+        {
+          "circle": {
+            "cx": 100,
+            "cy": 220,
+            "r": 16,
+            "outline": "#4488ff",
+            "width": 3
+          }
+        },
+        {
+          "sprite": {
+            "category": "units",
+            "name": "healer",
+            "x": 88,
+            "y": 208,
+            "scale": 3
+          }
+        }
+      ]
+    },
+    {
+      "res": [
+        480,
+        270
+      ],
+      "aa": "nearest",
+      "ops": [
+        {
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 480,
+            "h": 50,
+            "color": "#0d0d1a"
+          }
+        },
+        {
+          "rect": {
+            "x": 0,
+            "y": 48,
+            "w": 480,
+            "h": 4,
+            "color": "#ffdd44"
+          }
+        },
+        {
+          "pixel_text": {
+            "text": "HEX CRUSADE",
+            "x": 130,
+            "y": 10,
+            "color": "#ffdd44",
+            "shadow": "#886611",
+            "scale": 5
+          }
+        },
+        {
+          "rect": {
+            "x": 0,
+            "y": 246,
+            "w": 480,
+            "h": 24,
+            "color": "#0d0d1a"
+          }
+        },
+        {
+          "rect": {
+            "x": 0,
+            "y": 246,
+            "w": 480,
+            "h": 3,
+            "color": "#ffdd44"
+          }
+        },
+        {
+          "pixel_text": {
+            "text": "STRATEGY RPG",
+            "x": 170,
+            "y": 254,
+            "color": "#aaaacc",
+            "scale": 2
+          }
+        }
+      ]
+    }
+  ]
+}
