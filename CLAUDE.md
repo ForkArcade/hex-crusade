@@ -1,27 +1,27 @@
-Ten projekt to gra typu Strategy RPG na platformę ForkArcade.
+This project is a Strategy RPG game for the ForkArcade platform.
 
 ## SDK
-SDK jest podpięty w index.html. Używaj:
-- `ForkArcade.onReady(cb)` — start gry po połączeniu z platformą
-- `ForkArcade.submitScore(score)` — wyślij wynik po zakończeniu bitwy/gry
-- `ForkArcade.getPlayer()` — info o zalogowanym graczu
-- `ForkArcade.updateNarrative(data)` — raportuj stan narracji (graf, zmienne, eventy)
+SDK is included in index.html. Use:
+- `ForkArcade.onReady(cb)` — start the game after connecting to the platform
+- `ForkArcade.submitScore(score)` — submit score after a battle/game ends
+- `ForkArcade.getPlayer()` — info about the logged-in player
+- `ForkArcade.updateNarrative(data)` — report narrative state (graph, variables, events)
 
-## Typ gry
-Turowa strategia z jednostkami na gridzie lub w menu.
-Gracz zarządza drużyną, prowadzi bitwy turowe, zdobywa XP i ekwipunek.
+## Game type
+Turn-based strategy with units on a grid or in menus.
+Player manages a squad, fights turn-based battles, earns XP and equipment.
 
 ## Scoring
 Score = (chapters_completed * 1000) + (enemies_killed * 10) + (units_survived * 500) - (turns_total * 5)
 
-## Warstwa narracji
-Gra ma wbudowany narrative engine (`narrative` obiekt w game.js). Platforma wyświetla panel narracyjny w czasie rzeczywistym.
+## Narrative layer
+The game has a built-in narrative engine (`narrative` object in game.js). The platform displays a narrative panel in real-time.
 
-- `narrative.transition(nodeId, event)` — przejdź do nowego node'a w grafie, wyślij event
-- `narrative.setVar(name, value, reason)` — zmień zmienną fabularną, wyślij event
-- Rozbuduj `narrative.graph` o nowe nodes i edges dopasowane do fabuły gry
-- Typy nodów: `scene` (scena/rozdział), `choice` (decyzja gracza), `condition` (warunek)
-- Zmienne numeryczne (0-10) wyświetlane jako paski, boolean jako checkmarks
+- `narrative.transition(nodeId, event)` — move to a new node in the graph, send event
+- `narrative.setVar(name, value, reason)` — change a story variable, send event
+- Expand `narrative.graph` with new nodes and edges matching the game's story
+- Node types: `scene` (scene/chapter), `choice` (player decision), `condition` (condition check)
+- Numeric variables (0-10) displayed as bars, booleans as checkmarks
 
-## Plik wejściowy
-Cała logika gry w `game.js`. Renderowanie na `<canvas id="game">`.
+## Entry file
+All game logic in `game.js`. Rendering on `<canvas id="game">`.
