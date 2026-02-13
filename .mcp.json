@@ -2,9 +2,9 @@
   "mcpServers": {
     "forkarcade": {
       "type": "stdio",
-      "command": "node",
+      "command": "/home/dadmor/code/fork-arcade/forkarcade-platform/mcp/.venv/bin/python3",
       "args": [
-        "/home/dadmor/code/fork-arcade/forkarcade-platform/mcp/src/index.js"
+        "/home/dadmor/code/fork-arcade/forkarcade-platform/mcp/src/main.py"
       ],
       "env": {}
     }
