@@ -2,8 +2,8 @@ const canvas = document.getElementById('game')
 const ctx = canvas.getContext('2d')
 
 // ==================== CONSTANTS ====================
-const COLS = 12, ROWS = 10
-const HEX_SIZE = 28
+const COLS = 16, ROWS = 12
+const HEX_SIZE = 22
 const HEX_W = HEX_SIZE * Math.sqrt(3)
 const HEX_H = HEX_SIZE * 2
 const GRID_OFFSET_X = 60
@@ -26,9 +26,9 @@ const UNIT_DEFS = {
 }
 
 const BATTLES = [
-  { name: 'Border Outpost', enemyTypes: ['warrior','warrior','archer'], castlePos: {col:11,row:2} },
-  { name: 'Forest Stronghold', enemyTypes: ['warrior','archer','mage','warrior'], castlePos: {col:11,row:1} },
-  { name: 'Dark Fortress', enemyTypes: ['warrior','warrior','archer','mage','healer'], castlePos: {col:11,row:2} }
+  { name: 'Border Outpost', enemyTypes: ['warrior','warrior','archer'], castlePos: {col:15,row:2} },
+  { name: 'Forest Stronghold', enemyTypes: ['warrior','archer','mage','warrior'], castlePos: {col:15,row:1} },
+  { name: 'Dark Fortress', enemyTypes: ['warrior','warrior','archer','mage','healer'], castlePos: {col:15,row:2} }
 ]
 
 // ==================== STATE ====================
@@ -207,7 +207,7 @@ function setupBattle(idx) {
   units = []
   // Player units on left
   const playerTypes = ['warrior', 'archer', 'mage', 'healer']
-  const playerPositions = [{col:0,row:3},{col:0,row:5},{col:1,row:4},{col:1,row:6}]
+  const playerPositions = [{col:0,row:3},{col:0,row:6},{col:1,row:4},{col:1,row:7}]
   playerTypes.forEach((t, i) => {
     const p = playerPositions[i]
     const u = makeUnit(t, 'player', p.col, p.row)
@@ -218,7 +218,7 @@ function setupBattle(idx) {
   const battle = BATTLES[idx]
   const enemyStartCol = COLS - 2
   battle.enemyTypes.forEach((t, i) => {
-    const row = 2 + i * Math.floor(8 / battle.enemyTypes.length)
+    const row = 2 + i * Math.floor(10 / battle.enemyTypes.length)
     const col = enemyStartCol + (i % 2)
     const u = makeUnit(t, 'enemy', col, Math.min(row, ROWS - 1))
     units.push(u)
