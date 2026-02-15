@@ -461,7 +461,7 @@ function drawGrid() {
         }
         ctx.closePath()
         ctx.clip()
-        drawSprite(ctx, terrainSprite, x - HEX_SIZE, y - HEX_SIZE, HEX_SIZE * 2)
+        drawSprite(ctx, terrainSprite, x - HEX_SIZE, y - HEX_SIZE, HEX_SIZE * 2, 0)
         ctx.restore()
         // Draw hex border
         drawHex(x, y, HEX_SIZE - 1, null, '#333')
@@ -506,7 +506,7 @@ function drawUnits() {
     // Draw sprite fallback — colored circle with letter
     var sprite = typeof getSprite === 'function' && getSprite('units', u.type)
     if (sprite) {
-      drawSprite(ctx, sprite, x - size, y - size, size * 2)
+      drawSprite(ctx, sprite, x - size, y - size, size * 2, 0)
     } else {
       ctx.beginPath()
       ctx.arc(x, y, size, 0, Math.PI * 2)
