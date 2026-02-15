@@ -482,12 +482,9 @@ function drawGrid() {
       let isTarget = false
       if (targets.find(h => h.col === c && h.row === r)) isTarget = true
 
-      // Build variant sprite name
       var baseName = TERRAIN_SPRITE_MAP[cell.terrain] || cell.terrain
-      var suffix = cell.variant > 0 ? String(cell.variant + 1) : ''
-      var spriteName = baseName + suffix
-      var terrainSprite = typeof getSprite === 'function' && getSprite('terrain', spriteName)
-      var waterFrame = cell.terrain === 'water' ? Math.floor(Date.now() / 500) % 2 : 0
+      var terrainSprite = typeof getSprite === 'function' && getSprite('terrain', baseName)
+      var frame = cell.terrain === 'water' ? cell.variant * 2 + Math.floor(Date.now() / 500) % 2 : cell.variant
 
       if (terrainSprite) {
         // Clip to hex shape, then draw sprite(s)
@@ -503,11 +500,10 @@ function drawGrid() {
         ctx.clip()
         // Forest: draw grass underneath first
         if (cell.terrain === 'forest') {
-          var grassName = 'grass' + suffix
-          var grassSprite = getSprite('terrain', grassName)
-          if (grassSprite) drawSprite(ctx, grassSprite, x - HEX_SIZE, y - HEX_SIZE, HEX_SIZE * 2, 0)
+          var grassSprite = getSprite('terrain', 'grass')
+          if (grassSprite) drawSprite(ctx, grassSprite, x - HEX_SIZE, y - HEX_SIZE, HEX_SIZE * 2, cell.variant)
         }
-        drawSprite(ctx, terrainSprite, x - HEX_SIZE, y - HEX_SIZE, HEX_SIZE * 2, waterFrame)
+        drawSprite(ctx, terrainSprite, x - HEX_SIZE, y - HEX_SIZE, HEX_SIZE * 2, frame)
         ctx.restore()
         // Draw hex border
         drawHex(x, y, HEX_SIZE - 1, null, '#333')
