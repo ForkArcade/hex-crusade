@@ -2,8 +2,8 @@ const canvas = document.getElementById('game')
 const ctx = canvas.getContext('2d')
 
 // ==================== CONSTANTS ====================
-const COLS = 8, ROWS = 8
-const HEX_SIZE = 32
+const COLS = 12, ROWS = 10
+const HEX_SIZE = 28
 const HEX_W = HEX_SIZE * Math.sqrt(3)
 const HEX_H = HEX_SIZE * 2
 const GRID_OFFSET_X = 60
@@ -26,9 +26,9 @@ const UNIT_DEFS = {
 }
 
 const BATTLES = [
-  { name: 'Border Outpost', enemyTypes: ['warrior','warrior','archer'], castlePos: {col:7,row:1} },
-  { name: 'Forest Stronghold', enemyTypes: ['warrior','archer','mage','warrior'], castlePos: {col:7,row:0} },
-  { name: 'Dark Fortress', enemyTypes: ['warrior','warrior','archer','mage','healer'], castlePos: {col:7,row:1} }
+  { name: 'Border Outpost', enemyTypes: ['warrior','warrior','archer'], castlePos: {col:11,row:2} },
+  { name: 'Forest Stronghold', enemyTypes: ['warrior','archer','mage','warrior'], castlePos: {col:11,row:1} },
+  { name: 'Dark Fortress', enemyTypes: ['warrior','warrior','archer','mage','healer'], castlePos: {col:11,row:2} }
 ]
 
 // ==================== STATE ====================
@@ -36,7 +36,7 @@ const STATE = { MENU: 0, DEPLOY: 1, PLAYER_TURN: 2, SELECT_ACTION: 3, SELECT_TAR
 
 let state = STATE.MENU
 let battleIndex = 0
-let grid = []       // grid[row][col] = { terrain, unit }
+let grid = []       // grid[row][col] = { terrain, variant, unit }
 let units = []
 let selectedUnit = null
 let reachable = []  // [{col,row}] tiles the selected unit can move to
@@ -123,33 +123,68 @@ function hexNeighbors(col, row) {
     .filter(h => h.col >= 0 && h.col < COLS && h.row >= 0 && h.row < ROWS)
 }
 
+// ==================== PERLIN NOISE ====================
+function noiseHash(x, y, seed) {
+  var n = Math.sin(x * 127.1 + y * 311.7 + seed * 53.3) * 43758.5453
+  return n - Math.floor(n)
+}
+
+function smoothNoise(x, y, seed) {
+  var ix = Math.floor(x), iy = Math.floor(y)
+  var fx = x - ix, fy = y - iy
+  fx = fx * fx * (3 - 2 * fx)
+  fy = fy * fy * (3 - 2 * fy)
+  var a = noiseHash(ix, iy, seed)
+  var b = noiseHash(ix + 1, iy, seed)
+  var c = noiseHash(ix, iy + 1, seed)
+  var d = noiseHash(ix + 1, iy + 1, seed)
+  return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy
+}
+
+function perlin2D(x, y, seed, octaves) {
+  var val = 0, amp = 1, freq = 1, max = 0
+  for (var i = 0; i < octaves; i++) {
+    val += smoothNoise(x * freq, y * freq, seed + i * 97) * amp
+    max += amp
+    amp *= 0.5
+    freq *= 2
+  }
+  return val / max
+}
+
 // ==================== GRID & UNITS ====================
+const TERRAIN_SPRITE_MAP = { plains: 'grass', forest: 'forest', mountain: 'mountain', water: 'water', castle: 'castle', road: 'road' }
+
 function generateTerrain(battleIdx) {
+  var seed = battleIdx * 1000 + 42
   grid = []
-  for (let r = 0; r < ROWS; r++) {
+  for (var r = 0; r < ROWS; r++) {
     grid[r] = []
-    for (let c = 0; c < COLS; c++) {
-      let t = 'plains'
-      const rand = Math.random()
-      if (battleIdx === 1) {
-        if (rand < 0.25) t = 'forest'
-        else if (rand < 0.30) t = 'water'
-      } else if (battleIdx === 2) {
-        if (rand < 0.15) t = 'mountain'
-        else if (rand < 0.25) t = 'forest'
-        else if (rand < 0.30) t = 'water'
+    for (var c = 0; c < COLS; c++) {
+      var n = perlin2D(c * 0.35, r * 0.35, seed, 3)
+      var t = 'plains'
+      if (battleIdx === 0) {
+        if (n < 0.22) t = 'water'
+        else if (n < 0.38) t = 'forest'
+      } else if (battleIdx === 1) {
+        if (n < 0.18) t = 'water'
+        else if (n < 0.45) t = 'forest'
+        else if (n > 0.82) t = 'mountain'
       } else {
-        if (rand < 0.12) t = 'forest'
-        else if (rand < 0.16) t = 'water'
+        if (n < 0.15) t = 'water'
+        else if (n < 0.30) t = 'forest'
+        else if (n > 0.72) t = 'mountain'
       }
       // Keep spawn columns clear
       if (c <= 1 || c >= COLS - 2) t = 'plains'
-      grid[r][c] = { terrain: t, unit: null }
+      var variant = (c * 7 + r * 13 + seed) % 3
+      grid[r][c] = { terrain: t, variant: variant, unit: null }
     }
   }
   // Place castle
-  const cp = BATTLES[battleIdx].castlePos
+  var cp = BATTLES[battleIdx].castlePos
   grid[cp.row][cp.col].terrain = 'castle'
+  grid[cp.row][cp.col].variant = 0
 }
 
 function makeUnit(type, team, col, row) {
@@ -172,7 +207,7 @@ function setupBattle(idx) {
   units = []
   // Player units on left
   const playerTypes = ['warrior', 'archer', 'mage', 'healer']
-  const playerPositions = [{col:0,row:2},{col:0,row:4},{col:1,row:3},{col:1,row:5}]
+  const playerPositions = [{col:0,row:3},{col:0,row:5},{col:1,row:4},{col:1,row:6}]
   playerTypes.forEach((t, i) => {
     const p = playerPositions[i]
     const u = makeUnit(t, 'player', p.col, p.row)
@@ -183,7 +218,7 @@ function setupBattle(idx) {
   const battle = BATTLES[idx]
   const enemyStartCol = COLS - 2
   battle.enemyTypes.forEach((t, i) => {
-    const row = 1 + i * Math.floor(6 / battle.enemyTypes.length)
+    const row = 2 + i * Math.floor(8 / battle.enemyTypes.length)
     const col = enemyStartCol + (i % 2)
     const u = makeUnit(t, 'enemy', col, Math.min(row, ROWS - 1))
     units.push(u)
@@ -447,10 +482,15 @@ function drawGrid() {
       let isTarget = false
       if (targets.find(h => h.col === c && h.row === r)) isTarget = true
 
-      // Draw terrain — sprite with hex fallback
-      var terrainSprite = typeof getSprite === 'function' && getSprite('terrain', cell.terrain)
+      // Build variant sprite name
+      var baseName = TERRAIN_SPRITE_MAP[cell.terrain] || cell.terrain
+      var suffix = cell.variant > 0 ? String(cell.variant + 1) : ''
+      var spriteName = baseName + suffix
+      var terrainSprite = typeof getSprite === 'function' && getSprite('terrain', spriteName)
+      var waterFrame = cell.terrain === 'water' ? Math.floor(Date.now() / 500) % 2 : 0
+
       if (terrainSprite) {
-        // Clip to hex shape, then draw sprite
+        // Clip to hex shape, then draw sprite(s)
         ctx.save()
         ctx.beginPath()
         for (let i = 0; i < 6; i++) {
@@ -461,7 +501,13 @@ function drawGrid() {
         }
         ctx.closePath()
         ctx.clip()
-        drawSprite(ctx, terrainSprite, x - HEX_SIZE, y - HEX_SIZE, HEX_SIZE * 2, 0)
+        // Forest: draw grass underneath first
+        if (cell.terrain === 'forest') {
+          var grassName = 'grass' + suffix
+          var grassSprite = getSprite('terrain', grassName)
+          if (grassSprite) drawSprite(ctx, grassSprite, x - HEX_SIZE, y - HEX_SIZE, HEX_SIZE * 2, 0)
+        }
+        drawSprite(ctx, terrainSprite, x - HEX_SIZE, y - HEX_SIZE, HEX_SIZE * 2, waterFrame)
         ctx.restore()
         // Draw hex border
         drawHex(x, y, HEX_SIZE - 1, null, '#333')
