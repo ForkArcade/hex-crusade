@@ -1,72 +1,185 @@
 {
   "path": "/home/dadmor/code/fork-arcade/games/hex-crusade",
-  "w": 480,
-  "h": 270,
   "layers": [
     {
       "res": [
-        120,
-        68
+        12,
+        6
       ],
       "aa": "lanczos",
+      "opacity": 1,
       "ops": [
         {
-          "fill": "#1a1a2e"
-        },
-        {
-          "rect": {
-            "x": 0,
-            "y": 0,
-            "w": 120,
-            "h": 14,
-            "color": "#0d0d1a"
-          }
-        },
-        {
-          "rect": {
-            "x": 0,
-            "y": 60,
-            "w": 120,
-            "h": 8,
-            "color": "#0d0d1a"
+          "gradient": {
+            "from": "#080420",
+            "to": "#1a1858",
+            "direction": "vertical"
           }
         }
       ]
     },
     {
       "res": [
-        480,
-        270
+        36,
+        16
       ],
       "aa": "nearest",
+      "opacity": 1,
       "ops": [
         {
+          "triangle": {
+            "points": [
+              [
+                0,
+                8
+              ],
+              [
+                5,
+                3
+              ],
+              [
+                10,
+                8
+              ]
+            ],
+            "color": "#2a2a3a"
+          }
+        },
+        {
+          "triangle": {
+            "points": [
+              [
+                7,
+                8
+              ],
+              [
+                14,
+                1
+              ],
+              [
+                21,
+                8
+              ]
+            ],
+            "color": "#3a3a4a"
+          }
+        },
+        {
+          "triangle": {
+            "points": [
+              [
+                18,
+                8
+              ],
+              [
+                26,
+                4
+              ],
+              [
+                34,
+                8
+              ]
+            ],
+            "color": "#2a2a3a"
+          }
+        },
+        {
+          "pixels": {
+            "palette": {
+              "1": "#99aabb"
+            },
+            "rows": [
+              "1.",
+              ".1"
+            ],
+            "x": 13,
+            "y": 1
+          }
+        },
+        {
+          "rect": {
+            "x": 28,
+            "y": 4,
+            "w": 2,
+            "h": 5,
+            "color": "#6a5a3a"
+          }
+        },
+        {
+          "rect": {
+            "x": 30,
+            "y": 3,
+            "w": 5,
+            "h": 6,
+            "color": "#7a6a4a"
+          }
+        },
+        {
+          "rect": {
+            "x": 35,
+            "y": 4,
+            "w": 1,
+            "h": 5,
+            "color": "#6a5a3a"
+          }
+        },
+        {
+          "rect": {
+            "x": 28,
+            "y": 3,
+            "w": 1,
+            "h": 1,
+            "color": "#8a7a5a"
+          }
+        },
+        {
+          "rect": {
+            "x": 30,
+            "y": 2,
+            "w": 1,
+            "h": 1,
+            "color": "#8a7a5a"
+          }
+        },
+        {
+          "rect": {
+            "x": 34,
+            "y": 2,
+            "w": 1,
+            "h": 1,
+            "color": "#8a7a5a"
+          }
+        },
+        {
+          "rect": {
+            "x": 0,
+            "y": 8,
+            "w": 28,
+            "h": 8,
+            "color": "#3a7a2a"
+          }
+        },
+        {
+          "dither": {
+            "color": "#4a8a3a",
+            "density": 0.35,
+            "seed": 42,
+            "x": 0,
+            "y": 8,
+            "w": 28,
+            "h": 8
+          }
+        },
+        {
           "hex_grid": {
-            "cols": 10,
-            "rows": 7,
-            "hex_size": 24,
-            "x": -20,
-            "y": 30,
+            "cols": 5,
+            "rows": 3,
+            "hex_size": 3,
+            "x": 0,
+            "y": 8,
             "terrain": [
               [
                 "plains",
-                "plains",
-                "forest",
-                "plains",
-                "plains",
-                "mountain",
-                "plains",
-                "plains",
-                "castle",
-                "castle"
-              ],
-              [
-                "plains",
-                "forest",
-                "plains",
-                "plains",
-                "plains",
-                "plains",
                 "forest",
                 "plains",
                 "plains",
@@ -76,56 +189,10 @@
                 "plains",
                 "plains",
                 "plains",
-                "water",
-                "plains",
-                "plains",
-                "plains",
-                "plains",
-                "castle",
-                "plains"
-              ],
-              [
-                "forest",
-                "plains",
-                "plains",
-                "water",
-                "plains",
-                "plains",
-                "forest",
-                "plains",
-                "plains",
-                "plains"
-              ],
-              [
-                "plains",
-                "plains",
-                "forest",
-                "plains",
-                "plains",
-                "plains",
-                "plains",
-                "plains",
-                "plains",
-                "plains"
-              ],
-              [
-                "plains",
-                "forest",
-                "plains",
-                "plains",
-                "mountain",
-                "plains",
-                "plains",
-                "plains",
                 "forest",
                 "plains"
               ],
               [
-                "plains",
-                "plains",
-                "plains",
-                "forest",
-                "plains",
                 "plains",
                 "plains",
                 "plains",
@@ -134,159 +201,180 @@
               ]
             ],
             "colors": {
-              "plains": "#5a8c3c",
-              "forest": "#2d5a1e",
-              "mountain": "#7a7a7a",
-              "water": "#2a6a9a",
-              "castle": "#8a6a3a"
+              "plains": "#4a8a2c",
+              "forest": "#2d5a1e"
             },
-            "outline": "#1a1a2e",
-            "outline_width": 2
-          }
-        }
-      ]
-    },
-    {
-      "res": [
-        480,
-        270
-      ],
-      "aa": "nearest",
-      "ops": [
-        {
-          "circle": {
-            "cx": 100,
-            "cy": 115,
-            "r": 16,
-            "outline": "#4488ff",
-            "width": 3
+            "outline": "#2a5a1a",
+            "outline_width": 1
           }
         },
         {
           "sprite": {
             "category": "units",
             "name": "warrior",
-            "x": 88,
-            "y": 103,
-            "scale": 3
-          }
-        },
-        {
-          "circle": {
-            "cx": 60,
-            "cy": 185,
-            "r": 16,
-            "outline": "#4488ff",
-            "width": 3
+            "x": 4,
+            "y": 8,
+            "scale": 1
           }
         },
         {
           "sprite": {
             "category": "units",
             "name": "archer",
-            "x": 48,
-            "y": 173,
-            "scale": 3
-          }
-        },
-        {
-          "circle": {
-            "cx": 140,
-            "cy": 155,
-            "r": 16,
-            "outline": "#4488ff",
-            "width": 3
+            "x": 10,
+            "y": 10,
+            "scale": 1
           }
         },
         {
           "sprite": {
             "category": "units",
             "name": "mage",
-            "x": 128,
-            "y": 143,
-            "scale": 3
-          }
-        },
-        {
-          "circle": {
-            "cx": 100,
-            "cy": 220,
-            "r": 16,
-            "outline": "#4488ff",
-            "width": 3
-          }
-        },
-        {
-          "sprite": {
-            "category": "units",
-            "name": "healer",
-            "x": 88,
-            "y": 208,
-            "scale": 3
+            "x": 16,
+            "y": 9,
+            "scale": 1
           }
         }
       ]
     },
     {
       "res": [
-        480,
-        270
+        72,
+        32
       ],
       "aa": "nearest",
+      "opacity": 1,
       "ops": [
         {
-          "rect": {
+          "scatter": {
+            "color": "#ffffff",
+            "count": 18,
+            "seed": 123,
             "x": 0,
             "y": 0,
-            "w": 480,
-            "h": 50,
-            "color": "#0d0d1a"
+            "w": 72,
+            "h": 15
           }
         },
         {
-          "rect": {
-            "x": 0,
-            "y": 48,
-            "w": 480,
-            "h": 4,
-            "color": "#ffdd44"
+          "circle": {
+            "cx": 14,
+            "cy": 5,
+            "r": 3,
+            "color": "#ccccbb"
+          }
+        },
+        {
+          "circle": {
+            "cx": 14,
+            "cy": 5,
+            "r": 2,
+            "color": "#ddddcc"
+          }
+        },
+        {
+          "pixels": {
+            "palette": {
+              "1": "#ffc030"
+            },
+            "rows": [
+              "1.1",
+              "...",
+              "1.1"
+            ],
+            "x": 62,
+            "y": 9
+          }
+        },
+        {
+          "pixels": {
+            "palette": {
+              "1": "#ffc030"
+            },
+            "rows": [
+              "1"
+            ],
+            "x": 64,
+            "y": 13
           }
         },
         {
           "pixel_text": {
             "text": "HEX CRUSADE",
-            "x": 130,
-            "y": 10,
-            "color": "#ffdd44",
-            "shadow": "#886611",
-            "scale": 5
+            "x": 4,
+            "y": 2,
+            "color": "#ddb866",
+            "shadow": "#4a3a1a",
+            "scale": 1
+          }
+        }
+      ]
+    },
+    {
+      "res": [
+        18,
+        8
+      ],
+      "aa": "lanczos",
+      "opacity": 0.2,
+      "ops": [
+        {
+          "circle": {
+            "cx": 3,
+            "cy": 2,
+            "r": 3,
+            "color": "#8888aa"
           }
         },
         {
-          "rect": {
+          "circle": {
+            "cx": 16,
+            "cy": 4,
+            "r": 4,
+            "color": "#aa7730"
+          }
+        },
+        {
+          "gradient": {
+            "from": "#00000000",
+            "to": "#2a4a1a",
+            "direction": "vertical",
             "x": 0,
-            "y": 246,
-            "w": 480,
-            "h": 24,
-            "color": "#0d0d1a"
+            "y": 4,
+            "w": 14,
+            "h": 4
           }
-        },
+        }
+      ]
+    },
+    {
+      "res": [
+        9,
+        4
+      ],
+      "aa": "lanczos",
+      "opacity": 0.1,
+      "ops": [
         {
-          "rect": {
+          "dither": {
+            "color": "#1a2a3a",
+            "density": 0.4,
+            "seed": 77,
             "x": 0,
-            "y": 246,
-            "w": 480,
-            "h": 3,
-            "color": "#ffdd44"
+            "y": 2,
+            "w": 9,
+            "h": 2
           }
         },
         {
-          "pixel_text": {
-            "text": "STRATEGY RPG",
-            "x": 170,
-            "y": 254,
-            "color": "#aaaacc",
-            "scale": 2
+          "gradient": {
+            "from": "#00000000",
+            "to": "#0a1020",
+            "direction": "vertical",
+            "x": 0,
+            "y": 2,
+            "w": 9,
+            "h": 2
           }
         }
       ]
