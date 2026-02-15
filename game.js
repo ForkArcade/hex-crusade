@@ -664,6 +664,16 @@ function drawUI() {
     drawButton(PANEL_X, py, 90, 22, 'End Turn', true, 'endturn')
   }
 
+  // Zoom controls
+  var zy = canvas.height - 60
+  ctx.fillStyle = '#556'
+  ctx.font = '10px monospace'
+  ctx.fillText('Zoom: ' + Math.round(camera.zoom * 100) + '%', PANEL_X, zy)
+  zy += 14
+  drawButton(PANEL_X, zy, 28, 20, '+', true, 'zoom_in')
+  drawButton(PANEL_X + 32, zy, 28, 20, '-', true, 'zoom_out')
+  drawButton(PANEL_X + 64, zy, 50, 20, 'Reset', true, 'zoom_reset')
+
   // Turn info
   ctx.fillStyle = '#888'
   ctx.font = '11px monospace'
@@ -784,6 +794,7 @@ canvas.addEventListener('mousemove', function(e) {
   if (isDragging) {
     camera.x = dragCamStartX + (mx - dragStartX)
     camera.y = dragCamStartY + (my - dragStartY)
+    canvas.classList.add('grabbing')
     hoveredHex = null
     return
   }
@@ -807,6 +818,7 @@ canvas.addEventListener('mouseup', function(e) {
   if (e.button === 0) {
     isPotentialDrag = false
     isDragging = false
+    canvas.classList.remove('grabbing')
   }
 })
 
@@ -817,12 +829,33 @@ canvas.addEventListener('wheel', function(e) {
   const mx = (e.clientX - rect.left) * (canvas.width / rect.width)
   const my = (e.clientY - rect.top) * (canvas.height / rect.height)
   if (mx > PANEL_X - 10) return
-  const oldZoom = camera.zoom
-  const factor = e.deltaY < 0 ? 1.1 : 0.9
-  camera.zoom = Math.max(0.5, Math.min(3, camera.zoom * factor))
-  camera.x = mx - (mx - camera.x) * (camera.zoom / oldZoom)
-  camera.y = my - (my - camera.y) * (camera.zoom / oldZoom)
+  applyZoom(e.deltaY < 0 ? 1.15 : 0.87, mx, my)
 }, { passive: false })
+
+function applyZoom(factor, pivotX, pivotY) {
+  const oldZoom = camera.zoom
+  camera.zoom = Math.max(0.5, Math.min(3, camera.zoom * factor))
+  if (camera.zoom === oldZoom) return
+  camera.x = pivotX - (pivotX - camera.x) * (camera.zoom / oldZoom)
+  camera.y = pivotY - (pivotY - camera.y) * (camera.zoom / oldZoom)
+}
+
+document.addEventListener('keydown', function(e) {
+  if (state === STATE.MENU) return
+  // +/= zoom in, - zoom out, 0 reset
+  var centerX = (PANEL_X - 10) / 2
+  var centerY = canvas.height / 2
+  if (e.key === '+' || e.key === '=') {
+    applyZoom(1.2, centerX, centerY)
+    e.preventDefault()
+  } else if (e.key === '-') {
+    applyZoom(0.83, centerX, centerY)
+    e.preventDefault()
+  } else if (e.key === '0') {
+    camera = { x: 0, y: 0, zoom: 1 }
+    e.preventDefault()
+  }
+})
 
 canvas.addEventListener('click', function(e) {
   if (dragOccurred) { dragOccurred = false; return }
@@ -931,6 +964,18 @@ canvas.addEventListener('click', function(e) {
 })
 
 function handleAction(action) {
+  if (action === 'zoom_in') {
+    applyZoom(1.25, (PANEL_X - 10) / 2, canvas.height / 2)
+    return
+  }
+  if (action === 'zoom_out') {
+    applyZoom(0.8, (PANEL_X - 10) / 2, canvas.height / 2)
+    return
+  }
+  if (action === 'zoom_reset') {
+    camera = { x: 0, y: 0, zoom: 1 }
+    return
+  }
   if (action === 'endturn') {
     reachable = []
     targets = []
