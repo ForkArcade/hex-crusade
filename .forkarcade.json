@@ -2,7 +2,9 @@
   "template": "strategy-rpg",
   "slug": "hex-crusade",
   "title": "Hex Crusade",
-  "currentVersion": 5,
+  "engineFiles": ["fa-engine.js", "fa-renderer.js", "fa-input.js", "fa-audio.js"],
+  "gameFiles": ["data.js", "game.js", "render.js", "main.js"],
+  "currentVersion": 6,
   "versions": [
     {
       "version": 1,
@@ -33,6 +35,12 @@
       "date": "2026-02-15",
       "issue": null,
       "description": "Published v5"
+    },
+    {
+      "version": 6,
+      "date": "2026-02-16",
+      "issue": null,
+      "description": "Published v6"
     }
   ]
 }
