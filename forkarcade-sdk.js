@@ -55,6 +55,18 @@
       return;
     }
 
+    if (data.type === 'FA_SPRITES_UPDATE' && data.sprites) {
+      if (typeof SPRITE_DEFS !== 'undefined') {
+        SPRITE_DEFS = data.sprites;
+        for (var cat in SPRITE_DEFS) {
+          for (var name in SPRITE_DEFS[cat]) {
+            if (SPRITE_DEFS[cat][name]._c) delete SPRITE_DEFS[cat][name]._c;
+          }
+        }
+      }
+      return;
+    }
+
     if (data.requestId && _pending[data.requestId]) {
       var handler = _pending[data.requestId];
       delete _pending[data.requestId];
