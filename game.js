@@ -3,12 +3,12 @@ const ctx = canvas.getContext('2d')
 
 // ==================== CONSTANTS ====================
 const COLS = 16, ROWS = 12
-const HEX_SIZE = 22
+const HEX_SIZE = 32
 const HEX_W = HEX_SIZE * Math.sqrt(3)
 const HEX_H = HEX_SIZE * 2
-const GRID_OFFSET_X = 60
-const GRID_OFFSET_Y = 50
-const PANEL_X = GRID_OFFSET_X + COLS * HEX_W + 30
+const GRID_OFFSET_X = 50
+const GRID_OFFSET_Y = 45
+const PANEL_X = GRID_OFFSET_X + COLS * HEX_W + 25
 
 const TERRAIN = {
   plains:   { name: 'Plains',   color: '#5a8c3c', moveCost: 1, defBonus: 1.0 },
