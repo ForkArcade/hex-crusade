@@ -52,6 +52,14 @@ let enemiesKilled = 0
 let hoveredHex = null
 let abilityIndex = -1
 
+// Camera (zoom & pan)
+let camera = { x: 0, y: 0, zoom: 1 }
+let isDragging = false
+let isPotentialDrag = false
+let dragOccurred = false
+let dragStartX = 0, dragStartY = 0
+let dragCamStartX = 0, dragCamStartY = 0
+
 // ==================== NARRATIVE ====================
 const narrative = {
   variables: { morale: 5, battles_won: 0, casualties: 0 },
@@ -121,6 +129,10 @@ function hexNeighbors(col, row) {
     : [[1,0],[-1,0],[-1,-1],[0,-1],[-1,1],[0,1]]
   return dirs.map(([dc, dr]) => ({ col: col + dc, row: row + dr }))
     .filter(h => h.col >= 0 && h.col < COLS && h.row >= 0 && h.row < ROWS)
+}
+
+function screenToWorld(sx, sy) {
+  return { x: (sx - camera.x) / camera.zoom, y: (sy - camera.y) / camera.zoom }
 }
 
 // ==================== PERLIN NOISE ====================
@@ -236,6 +248,7 @@ function setupBattle(idx) {
   currentAction = null
   turnOrder = []
   turnIndex = 0
+  camera = { x: 0, y: 0, zoom: 1 }
 }
 
 // ==================== PATHFINDING ====================
@@ -761,10 +774,58 @@ canvas.addEventListener('mousemove', function(e) {
   const rect = canvas.getBoundingClientRect()
   const mx = (e.clientX - rect.left) * (canvas.width / rect.width)
   const my = (e.clientY - rect.top) * (canvas.height / rect.height)
-  hoveredHex = pixelToHex(mx, my)
+  if (isPotentialDrag) {
+    const dx = mx - dragStartX, dy = my - dragStartY
+    if (!isDragging && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+      isDragging = true
+      dragOccurred = true
+    }
+  }
+  if (isDragging) {
+    camera.x = dragCamStartX + (mx - dragStartX)
+    camera.y = dragCamStartY + (my - dragStartY)
+    hoveredHex = null
+    return
+  }
+  const w = screenToWorld(mx, my)
+  hoveredHex = pixelToHex(w.x, w.y)
 })
 
+canvas.addEventListener('mousedown', function(e) {
+  if (e.button === 0 && state !== STATE.MENU) {
+    const rect = canvas.getBoundingClientRect()
+    dragStartX = (e.clientX - rect.left) * (canvas.width / rect.width)
+    dragStartY = (e.clientY - rect.top) * (canvas.height / rect.height)
+    dragCamStartX = camera.x
+    dragCamStartY = camera.y
+    isPotentialDrag = true
+    dragOccurred = false
+  }
+})
+
+canvas.addEventListener('mouseup', function(e) {
+  if (e.button === 0) {
+    isPotentialDrag = false
+    isDragging = false
+  }
+})
+
+canvas.addEventListener('wheel', function(e) {
+  if (state === STATE.MENU) return
+  e.preventDefault()
+  const rect = canvas.getBoundingClientRect()
+  const mx = (e.clientX - rect.left) * (canvas.width / rect.width)
+  const my = (e.clientY - rect.top) * (canvas.height / rect.height)
+  if (mx > PANEL_X - 10) return
+  const oldZoom = camera.zoom
+  const factor = e.deltaY < 0 ? 1.1 : 0.9
+  camera.zoom = Math.max(0.5, Math.min(3, camera.zoom * factor))
+  camera.x = mx - (mx - camera.x) * (camera.zoom / oldZoom)
+  camera.y = my - (my - camera.y) * (camera.zoom / oldZoom)
+}, { passive: false })
+
 canvas.addEventListener('click', function(e) {
+  if (dragOccurred) { dragOccurred = false; return }
   const rect = canvas.getBoundingClientRect()
   const mx = (e.clientX - rect.left) * (canvas.width / rect.width)
   const my = (e.clientY - rect.top) * (canvas.height / rect.height)
@@ -820,8 +881,9 @@ canvas.addEventListener('click', function(e) {
     }
   }
 
-  // Hex click
-  const hex = pixelToHex(mx, my)
+  // Hex click (convert screen coords to world coords)
+  const worldClick = screenToWorld(mx, my)
+  const hex = pixelToHex(worldClick.x, worldClick.y)
   if (!hex) return
 
   if (state === STATE.SELECT_TARGET) {
@@ -912,14 +974,27 @@ function gameLoop() {
   if (state === STATE.MENU) {
     drawMenu()
   } else if (state === STATE.BATTLE_END) {
-    drawGrid(); drawUnits(); drawUI(); drawBattleEnd()
+    ctx.save()
+    ctx.translate(camera.x, camera.y)
+    ctx.scale(camera.zoom, camera.zoom)
+    drawGrid(); drawUnits(); drawMessages()
+    ctx.restore()
+    drawUI(); drawBattleEnd()
   } else if (state === STATE.GAME_OVER) {
-    drawGrid(); drawUnits(); drawUI(); drawGameOver()
+    ctx.save()
+    ctx.translate(camera.x, camera.y)
+    ctx.scale(camera.zoom, camera.zoom)
+    drawGrid(); drawUnits(); drawMessages()
+    ctx.restore()
+    drawUI(); drawGameOver()
   } else {
-    drawGrid(); drawUnits(); drawUI()
+    ctx.save()
+    ctx.translate(camera.x, camera.y)
+    ctx.scale(camera.zoom, camera.zoom)
+    drawGrid(); drawUnits(); drawMessages()
+    ctx.restore()
+    drawUI()
   }
-
-  drawMessages()
   requestAnimationFrame(gameLoop)
 }
 
