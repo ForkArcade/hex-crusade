@@ -342,6 +342,8 @@ function setupBattle(idx) {
   turnOrder = []
   turnIndex = 0
   camera = { x: 0, y: 0, zoom: 1 }
+  gridCacheCanvas = null  // force terrain re-render
+  gridCacheWaterFrame = -1
 
   // Apply deferred choice effects
   for (var i = 0; i < pendingChoiceEffects.length; i++) {
@@ -570,71 +572,88 @@ function addMessage(col, row, text, color) {
 }
 
 // ==================== DRAWING ====================
-function drawHex(cx, cy, size, fill, stroke) {
-  ctx.beginPath()
+function drawHex(cx, cy, size, fill, stroke, c) {
+  c = c || ctx
+  c.beginPath()
   for (let i = 0; i < 6; i++) {
     const angle = Math.PI / 180 * (60 * i - 30)
     const x = cx + size * Math.cos(angle)
     const y = cy + size * Math.sin(angle)
-    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y)
+    if (i === 0) c.moveTo(x, y); else c.lineTo(x, y)
   }
-  ctx.closePath()
-  if (fill) { ctx.fillStyle = fill; ctx.fill() }
-  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1; ctx.stroke() }
+  c.closePath()
+  if (fill) { c.fillStyle = fill; c.fill() }
+  if (stroke) { c.strokeStyle = stroke; c.lineWidth = 1; c.stroke() }
+}
+
+// Grid terrain cache (avoids 192 clip ops per frame)
+let gridCacheCanvas = null
+let gridCacheCtx = null
+let gridCacheWaterFrame = -1
+
+function rebuildGridCache() {
+  var wf = Math.floor(Date.now() / 600) % 3
+  if (gridCacheCanvas && gridCacheWaterFrame === wf) return
+  if (!gridCacheCanvas) {
+    gridCacheCanvas = document.createElement('canvas')
+    gridCacheCanvas.width = GRID_OFFSET_X + COLS * HEX_W + HEX_W
+    gridCacheCanvas.height = GRID_OFFSET_Y + ROWS * HEX_H * 0.75 + HEX_H
+    gridCacheCtx = gridCacheCanvas.getContext('2d')
+  }
+  var gc = gridCacheCtx
+  gc.clearRect(0, 0, gridCacheCanvas.width, gridCacheCanvas.height)
+  for (var r = 0; r < ROWS; r++) {
+    for (var c = 0; c < COLS; c++) {
+      var pos = hexToPixel(c, r)
+      var cell = grid[r][c]
+      var t = TERRAIN[cell.terrain]
+      var baseName = TERRAIN_SPRITE_MAP[cell.terrain] || cell.terrain
+      var terrainSprite = typeof getSprite === 'function' && getSprite('terrain', baseName)
+      var frame = cell.terrain === 'water' ? (cell.variant + wf) % 3 : cell.variant
+      if (terrainSprite) {
+        gc.save()
+        gc.beginPath()
+        for (var i = 0; i < 6; i++) {
+          var angle = Math.PI / 180 * (60 * i - 30)
+          var hx = pos.x + (HEX_SIZE - 1) * Math.cos(angle)
+          var hy = pos.y + (HEX_SIZE - 1) * Math.sin(angle)
+          if (i === 0) gc.moveTo(hx, hy); else gc.lineTo(hx, hy)
+        }
+        gc.closePath()
+        gc.clip()
+        if (cell.terrain === 'forest') {
+          var grassSprite = getSprite('terrain', 'grass')
+          if (grassSprite) drawSprite(gc, grassSprite, pos.x - HEX_SIZE, pos.y - HEX_SIZE, HEX_SIZE * 2, cell.variant)
+        }
+        drawSprite(gc, terrainSprite, pos.x - HEX_SIZE, pos.y - HEX_SIZE, HEX_SIZE * 2, frame)
+        gc.restore()
+        drawHex(pos.x, pos.y, HEX_SIZE - 1, null, '#333', gc)
+      } else {
+        drawHex(pos.x, pos.y, HEX_SIZE - 1, t.color, '#333', gc)
+      }
+    }
+  }
+  gridCacheWaterFrame = wf
 }
 
 function drawGrid() {
+  // Draw cached terrain (rebuilds only when water frame changes ~every 600ms)
+  rebuildGridCache()
+  if (gridCacheCanvas) ctx.drawImage(gridCacheCanvas, 0, 0)
+
+  // Draw overlays: highlights, targets, hover (lightweight — no clipping)
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
+      let highlight = reachable.find(h => h.col === c && h.row === r)
+      let isTarget = targets.find(h => h.col === c && h.row === r)
+      let isHover = hoveredHex && hoveredHex.col === c && hoveredHex.row === r
+
+      if (!highlight && !isTarget && !isHover) continue
+
       const { x, y } = hexToPixel(c, r)
-      const cell = grid[r][c]
-      const t = TERRAIN[cell.terrain]
-
-      // Highlight reachable
-      let highlight = false
-      if (reachable.find(h => h.col === c && h.row === r)) highlight = true
-
-      // Highlight targets
-      let isTarget = false
-      if (targets.find(h => h.col === c && h.row === r)) isTarget = true
-
-      var baseName = TERRAIN_SPRITE_MAP[cell.terrain] || cell.terrain
-      var terrainSprite = typeof getSprite === 'function' && getSprite('terrain', baseName)
-      var frame = cell.terrain === 'water' ? (cell.variant + Math.floor(Date.now() / 600)) % 3 : cell.variant
-
-      if (terrainSprite) {
-        // Clip to hex shape, then draw sprite(s)
-        ctx.save()
-        ctx.beginPath()
-        for (let i = 0; i < 6; i++) {
-          const angle = Math.PI / 180 * (60 * i - 30)
-          const hx = x + (HEX_SIZE - 1) * Math.cos(angle)
-          const hy = y + (HEX_SIZE - 1) * Math.sin(angle)
-          if (i === 0) ctx.moveTo(hx, hy); else ctx.lineTo(hx, hy)
-        }
-        ctx.closePath()
-        ctx.clip()
-        // Forest: draw grass underneath first
-        if (cell.terrain === 'forest') {
-          var grassSprite = getSprite('terrain', 'grass')
-          if (grassSprite) drawSprite(ctx, grassSprite, x - HEX_SIZE, y - HEX_SIZE, HEX_SIZE * 2, cell.variant)
-        }
-        drawSprite(ctx, terrainSprite, x - HEX_SIZE, y - HEX_SIZE, HEX_SIZE * 2, frame)
-        ctx.restore()
-        // Draw hex border
-        drawHex(x, y, HEX_SIZE - 1, null, '#333')
-      } else {
-        drawHex(x, y, HEX_SIZE - 1, t.color, '#333')
-      }
-
       if (highlight) drawHex(x, y, HEX_SIZE - 2, 'rgba(100,200,255,0.3)', '#4cf')
       if (isTarget) drawHex(x, y, HEX_SIZE - 2, 'rgba(255,80,80,0.3)', '#f44')
-
-      // Hovered hex
-      if (hoveredHex && hoveredHex.col === c && hoveredHex.row === r) {
-        drawHex(x, y, HEX_SIZE - 2, null, '#fff')
-        ctx.lineWidth = 2
-      }
+      if (isHover) { drawHex(x, y, HEX_SIZE - 2, null, '#fff'); ctx.lineWidth = 2 }
     }
   }
 }
