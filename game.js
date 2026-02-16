@@ -32,7 +32,7 @@ const BATTLES = [
 ]
 
 // ==================== STATE ====================
-const STATE = { MENU: 0, DEPLOY: 1, PLAYER_TURN: 2, SELECT_ACTION: 3, SELECT_TARGET: 4, ANIMATING: 5, ENEMY_TURN: 6, BATTLE_END: 7, GAME_OVER: 8 }
+const STATE = { MENU: 0, DEPLOY: 1, PLAYER_TURN: 2, SELECT_ACTION: 3, SELECT_TARGET: 4, ANIMATING: 5, ENEMY_TURN: 6, BATTLE_END: 7, GAME_OVER: 8, CHOICE: 9 }
 
 let state = STATE.MENU
 let battleIndex = 0
@@ -59,6 +59,12 @@ let isPotentialDrag = false
 let dragOccurred = false
 let dragStartX = 0, dragStartY = 0
 let dragCamStartX = 0, dragCamStartY = 0
+
+// Narrative display
+let narrativeMessage = null   // { text, startTime }
+let choiceData = null          // current CHOICE_DEFS entry
+let pendingChoiceEffects = []  // functions to run at start of next battle
+let hoveredChoiceBtn = -1      // 0 or 1, -1 = none
 
 // ==================== NARRATIVE ====================
 const narrative = {
@@ -94,6 +100,93 @@ const narrative = {
   setVar(name, value, reason) {
     this.variables[name] = value
     ForkArcade.updateNarrative({ variables: this.variables, currentNode: this.currentNode, graph: this.graph, event: reason || (name + ' = ' + value) })
+  }
+}
+
+// ==================== STORY TEXTS & CHOICES ====================
+const STORY_TEXTS = {
+  'battle-1-start': 'Your crusade begins at the border outpost. Steel your resolve.',
+  'battle-1-win':   'The outpost falls! But what of the survivors...?',
+  'battle-2-start': 'The forest grows thick around you. An enemy stronghold awaits.',
+  'battle-2-win':   'The stronghold is yours! Two paths lie ahead...',
+  'battle-3-start': 'The dark fortress looms. This is the final stand.',
+  'victory':        'The crusade is complete! Glory to the victors!',
+  'defeat':         'Your army is shattered. The crusade has failed.'
+}
+
+const CHOICE_DEFS = {
+  'choice-1': {
+    title: 'Mercy or Raze?',
+    context: 'The outpost garrison surrenders. Your soldiers look to you for orders.',
+    options: [
+      {
+        label: 'Show Mercy',
+        desc: 'Spare the survivors. Morale +2.',
+        effect() {
+          narrative.setVar('morale', Math.min(10, narrative.variables.morale + 2), 'Showed mercy — morale rises')
+          narrative.transition('battle-2', 'Chose mercy')
+        }
+      },
+      {
+        label: 'Raze It',
+        desc: 'Burn it down. Morale -1, but enemies start weakened (-20% HP).',
+        effect() {
+          narrative.setVar('morale', Math.max(0, narrative.variables.morale - 1), 'Razed the outpost — morale drops')
+          narrative.transition('battle-2', 'Chose to raze')
+          pendingChoiceEffects.push(function() {
+            units.filter(u => u.team === 'enemy').forEach(u => {
+              u.hp = Math.max(1, Math.floor(u.hp * 0.8))
+            })
+          })
+        }
+      }
+    ]
+  },
+  'choice-2': {
+    title: 'Shortcut or Safe Path?',
+    context: 'A narrow mountain pass could save time, but it\'s treacherous.',
+    options: [
+      {
+        label: 'Take Shortcut',
+        desc: 'Your troops lose 15% HP, but fewer enemies at the fortress.',
+        effect() {
+          narrative.transition('battle-3', 'Took the shortcut')
+          pendingChoiceEffects.push(function() {
+            units.filter(u => u.team === 'player').forEach(u => {
+              u.hp = Math.max(1, Math.floor(u.hp * 0.85))
+            })
+            // Remove one enemy (not the castle)
+            var enemies = units.filter(u => u.team === 'enemy' && u.type !== 'castle')
+            if (enemies.length > 0) {
+              var last = enemies[enemies.length - 1]
+              last.alive = false
+              last.hp = 0
+              grid[last.row][last.col].unit = null
+            }
+          })
+        }
+      },
+      {
+        label: 'Safe Path',
+        desc: 'No losses, but the fortress is fully prepared (+20% HP, +2 ATK).',
+        effect() {
+          narrative.transition('battle-3', 'Took the safe path')
+          pendingChoiceEffects.push(function() {
+            units.filter(u => u.team === 'enemy').forEach(u => {
+              u.hp = Math.min(u.maxHp, Math.floor(u.hp * 1.2))
+              u.maxHp = Math.floor(u.maxHp * 1.2)
+              u.atk += 2
+            })
+          })
+        }
+      }
+    ]
+  }
+}
+
+function showNarrativeText(key) {
+  if (STORY_TEXTS[key]) {
+    narrativeMessage = { text: STORY_TEXTS[key], startTime: Date.now() }
   }
 }
 
@@ -249,6 +342,12 @@ function setupBattle(idx) {
   turnOrder = []
   turnIndex = 0
   camera = { x: 0, y: 0, zoom: 1 }
+
+  // Apply deferred choice effects
+  for (var i = 0; i < pendingChoiceEffects.length; i++) {
+    pendingChoiceEffects[i]()
+  }
+  pendingChoiceEffects = []
 }
 
 // ==================== PATHFINDING ====================
@@ -302,7 +401,9 @@ function findHealTargets(unit, range) {
 // ==================== COMBAT ====================
 function calcDamage(attacker, defender) {
   const terrain = TERRAIN[grid[defender.row][defender.col].terrain]
-  const raw = attacker.atk - defender.def * terrain.defBonus
+  let atkBonus = 0
+  if (attacker.team === 'player') atkBonus = narrative.variables.morale - 5 // morale 7 = +2, morale 3 = -2
+  const raw = (attacker.atk + atkBonus) - defender.def * terrain.defBonus
   return Math.max(1, Math.floor(raw * (0.9 + Math.random() * 0.2)))
 }
 
@@ -397,12 +498,14 @@ function checkBattleEnd() {
   const castle = units.find(u => u.type === 'castle')
   if (!castle || !castle.alive) {
     narrative.setVar('battles_won', narrative.variables.battles_won + 1, 'Castle destroyed — Battle ' + (battleIndex + 1) + ' won!')
+    showNarrativeText('battle-' + (battleIndex + 1) + '-win')
     state = STATE.BATTLE_END
     return true
   }
   const playerAlive = units.filter(u => u.team === 'player' && u.alive)
   if (playerAlive.length === 0) {
     narrative.setVar('casualties', narrative.variables.casualties + 4, 'All units lost!')
+    showNarrativeText('defeat')
     state = STATE.GAME_OVER
     return true
   }
@@ -614,7 +717,25 @@ function drawUI() {
   ctx.font = '13px monospace'
   ctx.fillStyle = '#aaa'
   ctx.fillText(BATTLES[battleIndex].name, PANEL_X, py)
-  py += 25
+  py += 20
+
+  // Morale bar
+  var morale = narrative.variables.morale
+  var moraleColor = morale >= 7 ? '#4f4' : morale >= 4 ? '#ff0' : '#f44'
+  ctx.fillStyle = '#888'
+  ctx.font = '11px monospace'
+  ctx.fillText('Morale:', PANEL_X, py)
+  var barX = PANEL_X + 60, barW = 70, barH = 10
+  ctx.fillStyle = '#333'
+  ctx.fillRect(barX, py, barW, barH)
+  ctx.fillStyle = moraleColor
+  ctx.fillRect(barX, py, barW * (morale / 10), barH)
+  ctx.fillStyle = '#fff'
+  ctx.font = '9px monospace'
+  ctx.textAlign = 'center'
+  ctx.fillText(morale + '/10', barX + barW / 2, py + 1)
+  ctx.textAlign = 'left'
+  py += 18
 
   // Player units
   ctx.fillStyle = '#4af'
@@ -773,6 +894,89 @@ function drawGameOver() {
   ctx.textAlign = 'left'
 }
 
+function drawNarrativeBar() {
+  if (!narrativeMessage) return
+  var elapsed = Date.now() - narrativeMessage.startTime
+  var fadeDur = 500, showDur = 3000, fadeOutDur = 1000
+  var totalDur = fadeDur + showDur + fadeOutDur
+  if (elapsed > totalDur) { narrativeMessage = null; return }
+
+  var alpha = 1
+  if (elapsed < fadeDur) alpha = elapsed / fadeDur
+  else if (elapsed > fadeDur + showDur) alpha = 1 - (elapsed - fadeDur - showDur) / fadeOutDur
+
+  var barH = 36
+  ctx.save()
+  ctx.globalAlpha = alpha * 0.85
+  ctx.fillStyle = '#0a0a2a'
+  ctx.fillRect(0, 0, PANEL_X - 10, barH)
+  ctx.globalAlpha = alpha
+  ctx.fillStyle = '#dda'
+  ctx.font = '13px monospace'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(narrativeMessage.text, (PANEL_X - 10) / 2, barH / 2)
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'top'
+  ctx.restore()
+}
+
+function drawChoice() {
+  if (!choiceData) return
+  ctx.fillStyle = 'rgba(5,5,20,0.92)'
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+  var cx = canvas.width / 2, cy = canvas.height / 2
+
+  // Title
+  ctx.fillStyle = '#dda'
+  ctx.font = 'bold 26px monospace'
+  ctx.textAlign = 'center'
+  ctx.fillText(choiceData.title, cx, cy - 140)
+
+  // Context
+  ctx.fillStyle = '#aaa'
+  ctx.font = '14px monospace'
+  ctx.fillText(choiceData.context, cx, cy - 100)
+
+  // Morale display
+  var morale = narrative.variables.morale
+  var moraleColor = morale >= 7 ? '#4f4' : morale >= 4 ? '#ff0' : '#f44'
+  ctx.fillStyle = moraleColor
+  ctx.font = '12px monospace'
+  ctx.fillText('Morale: ' + morale + '/10', cx, cy - 70)
+
+  // Option buttons
+  var btnW = 340, btnH = 70, gap = 30
+  var startX = cx - btnW - gap / 2
+  for (var i = 0; i < choiceData.options.length; i++) {
+    var opt = choiceData.options[i]
+    var bx = startX + i * (btnW + gap)
+    var by = cy - 20
+    var hovered = hoveredChoiceBtn === i
+
+    ctx.fillStyle = hovered ? '#2a2a5a' : '#1a1a3a'
+    ctx.fillRect(bx, by, btnW, btnH)
+    ctx.strokeStyle = hovered ? '#8af' : '#446'
+    ctx.lineWidth = 2
+    ctx.strokeRect(bx, by, btnW, btnH)
+
+    ctx.fillStyle = hovered ? '#fff' : '#cdf'
+    ctx.font = 'bold 16px monospace'
+    ctx.textAlign = 'center'
+    ctx.fillText(opt.label, bx + btnW / 2, by + 22)
+
+    ctx.fillStyle = '#999'
+    ctx.font = '12px monospace'
+    ctx.fillText(opt.desc, bx + btnW / 2, by + 48)
+
+    // Store button rect for click detection
+    buttons.push({ x: bx, y: by, w: btnW, h: btnH, action: 'choice_' + i })
+  }
+
+  ctx.textAlign = 'left'
+}
+
 // ==================== SCORING ====================
 function calculateScore() {
   const survived = units.filter(u => u.team === 'player' && u.alive).length
@@ -798,12 +1002,24 @@ canvas.addEventListener('mousemove', function(e) {
     hoveredHex = null
     return
   }
+  // Track choice button hover
+  if (state === STATE.CHOICE) {
+    hoveredChoiceBtn = -1
+    for (var bi = 0; bi < buttons.length; bi++) {
+      var b = buttons[bi]
+      if (b.action && b.action.startsWith('choice_') && mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
+        hoveredChoiceBtn = parseInt(b.action.replace('choice_', ''))
+        break
+      }
+    }
+    return
+  }
   const w = screenToWorld(mx, my)
   hoveredHex = pixelToHex(w.x, w.y)
 })
 
 canvas.addEventListener('mousedown', function(e) {
-  if (e.button === 0 && state !== STATE.MENU) {
+  if (e.button === 0 && state !== STATE.MENU && state !== STATE.CHOICE) {
     const rect = canvas.getBoundingClientRect()
     dragStartX = (e.clientX - rect.left) * (canvas.width / rect.width)
     dragStartY = (e.clientY - rect.top) * (canvas.height / rect.height)
@@ -841,7 +1057,7 @@ function applyZoom(factor, pivotX, pivotY) {
 }
 
 document.addEventListener('keydown', function(e) {
-  if (state === STATE.MENU) return
+  if (state === STATE.MENU || state === STATE.CHOICE) return
   // +/= zoom in, - zoom out, 0 reset
   var centerX = (PANEL_X - 10) / 2
   var centerY = canvas.height / 2
@@ -864,31 +1080,40 @@ canvas.addEventListener('click', function(e) {
   const my = (e.clientY - rect.top) * (canvas.height / rect.height)
 
   if (state === STATE.MENU) {
+    narrative.variables.morale = 5
+    narrative.variables.battles_won = 0
+    narrative.variables.casualties = 0
+    pendingChoiceEffects = []
     narrative.transition('battle-1', 'The crusade begins — Battle 1: Border Outpost')
     setupBattle(0)
+    showNarrativeText('battle-1-start')
     startPlayerTurn()
     return
   }
 
   if (state === STATE.BATTLE_END) {
     if (battleIndex < 2) {
-      battleIndex++
-      // Heal surviving units partially
-      units.filter(u => u.team === 'player' && u.alive).forEach(u => {
-        u.hp = Math.min(u.maxHp, u.hp + Math.floor(u.maxHp * 0.4))
-      })
-      narrative.transition('battle-' + (battleIndex + 1), 'Advancing to Battle ' + (battleIndex + 1) + ': ' + BATTLES[battleIndex].name)
-      setupBattle(battleIndex)
-      startPlayerTurn()
+      // Show choice screen between battles
+      var choiceId = 'choice-' + (battleIndex + 1)
+      if (CHOICE_DEFS[choiceId]) {
+        choiceData = CHOICE_DEFS[choiceId]
+        narrative.transition(choiceId, 'Facing a decision: ' + choiceData.title)
+        state = STATE.CHOICE
+        hoveredChoiceBtn = -1
+      }
     } else {
       // Final victory
       score = calculateScore()
+      showNarrativeText('victory')
       narrative.transition('victory', 'The crusade is complete! Final score: ' + score)
       ForkArcade.submitScore(score)
       state = STATE.MENU
       battleIndex = 0
       totalTurns = 0
       enemiesKilled = 0
+      narrative.variables.morale = 5
+      narrative.variables.battles_won = 0
+      narrative.variables.casualties = 0
     }
     return
   }
@@ -901,7 +1126,14 @@ canvas.addEventListener('click', function(e) {
     battleIndex = 0
     totalTurns = 0
     enemiesKilled = 0
+    narrative.variables.morale = 5
+    narrative.variables.battles_won = 0
+    narrative.variables.casualties = 0
     return
+  }
+
+  if (state === STATE.CHOICE) {
+    // Button clicks handled via buttons array below
   }
 
   if (state === STATE.ENEMY_TURN) return
@@ -964,6 +1196,23 @@ canvas.addEventListener('click', function(e) {
 })
 
 function handleAction(action) {
+  if (action.startsWith('choice_')) {
+    var idx = parseInt(action.replace('choice_', ''))
+    if (choiceData && choiceData.options[idx]) {
+      choiceData.options[idx].effect()
+      battleIndex++
+      // Heal surviving units partially
+      units.filter(u => u.team === 'player' && u.alive).forEach(u => {
+        u.hp = Math.min(u.maxHp, u.hp + Math.floor(u.maxHp * 0.4))
+      })
+      setupBattle(battleIndex)
+      showNarrativeText('battle-' + (battleIndex + 1) + '-start')
+      choiceData = null
+      hoveredChoiceBtn = -1
+      startPlayerTurn()
+    }
+    return
+  }
   if (action === 'zoom_in') {
     applyZoom(1.25, (PANEL_X - 10) / 2, canvas.height / 2)
     return
@@ -1018,6 +1267,8 @@ function gameLoop() {
 
   if (state === STATE.MENU) {
     drawMenu()
+  } else if (state === STATE.CHOICE) {
+    drawChoice()
   } else if (state === STATE.BATTLE_END) {
     ctx.save()
     ctx.translate(camera.x, camera.y)
@@ -1039,6 +1290,7 @@ function gameLoop() {
     drawGrid(); drawUnits(); drawMessages()
     ctx.restore()
     drawUI()
+    drawNarrativeBar()
   }
   requestAnimationFrame(gameLoop)
 }
