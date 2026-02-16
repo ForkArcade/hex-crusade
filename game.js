@@ -600,7 +600,7 @@ function drawGrid() {
 
       var baseName = TERRAIN_SPRITE_MAP[cell.terrain] || cell.terrain
       var terrainSprite = typeof getSprite === 'function' && getSprite('terrain', baseName)
-      var frame = cell.terrain === 'water' ? cell.variant * 2 + Math.floor(Date.now() / 500) % 2 : cell.variant
+      var frame = cell.terrain === 'water' ? (cell.variant + Math.floor(Date.now() / 600)) % 3 : cell.variant
 
       if (terrainSprite) {
         // Clip to hex shape, then draw sprite(s)
