@@ -14,7 +14,7 @@
     "render.js",
     "main.js"
   ],
-  "currentVersion": 11,
+  "currentVersion": 12,
   "versions": [
     {
       "version": 1,
@@ -81,6 +81,12 @@
       "date": "2026-02-16",
       "issue": null,
       "description": "Published v11"
+    },
+    {
+      "version": 12,
+      "date": "2026-02-16",
+      "issue": null,
+      "description": "Published v12"
     }
   ]
 }
